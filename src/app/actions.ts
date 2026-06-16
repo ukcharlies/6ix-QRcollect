@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createFormSchema, normalizeFields, parseStoredFields, validateResponseData } from "@/lib/form-schema";
 import { createManageToken, createSlug } from "@/lib/tokens";
@@ -51,6 +52,11 @@ export async function createFormAction(_prevState: ActionState, formData: FormDa
       savedManageToken = form.manageToken;
       break;
     } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
+        console.error(error);
+        return { ok: false, message: "Database tables are missing. Run the Prisma migration, then try again." };
+      }
+
       if (attempt === 4) {
         console.error(error);
         return { ok: false, message: "Could not create a unique form. Try again." };
