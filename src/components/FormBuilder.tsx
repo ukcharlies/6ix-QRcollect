@@ -14,8 +14,17 @@ const fieldTypeOptions: { value: FieldType; label: string }[] = [
   { value: "checkbox", label: "Checkbox" },
 ];
 
-function newField(index: number): FormField {
+type BuilderField = FormField & {
+  builderId: string;
+};
+
+function newBuilderId() {
+  return crypto.randomUUID();
+}
+
+function newField(index: number): BuilderField {
   return {
+    builderId: newBuilderId(),
     id: `field_${index}`,
     label: "New field",
     type: "text",
@@ -24,13 +33,16 @@ function newField(index: number): FormField {
 }
 
 export function FormBuilder() {
-  const [fields, setFields] = useState<FormField[]>([
-    { id: "name", label: "Full name", type: "text", required: true },
-    { id: "email", label: "Email", type: "email", required: true },
+  const [fields, setFields] = useState<BuilderField[]>([
+    { builderId: newBuilderId(), id: "name", label: "Full name", type: "text", required: true },
+    { builderId: newBuilderId(), id: "email", label: "Email", type: "email", required: true },
   ]);
   const [state, action, pending] = useActionState<ActionState, FormData>(createFormAction, { ok: true });
 
-  const fieldsJson = useMemo(() => JSON.stringify(fields), [fields]);
+  const fieldsJson = useMemo(
+    () => JSON.stringify(fields.map(({ builderId: _builderId, ...field }) => field)),
+    [fields],
+  );
 
   function updateField(index: number, updates: Partial<FormField>) {
     setFields((current) =>
@@ -89,7 +101,7 @@ export function FormBuilder() {
 
         <div className="mt-5 grid gap-4">
           {fields.map((field, index) => (
-            <div key={`${field.id}-${index}`} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div key={field.builderId} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
               <div className="grid gap-3 sm:grid-cols-[1fr_150px]">
                 <label className="grid gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Label
